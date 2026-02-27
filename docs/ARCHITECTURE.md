@@ -1,28 +1,28 @@
 # Architecture
 
-This document describes how paceline works under the hood. It covers the
+This document describes how lush works under the hood. It covers the
 spec format, build system, runtime, tool system, scheduling, multi-agent
 composition, authorization, and observability.
 
 ## Overview
 
-Paceline is a compiler and runtime for AI agents. The developer interface
-is a set of YAML spec files in a git repository. The paceline CLI
+Lush is a compiler and runtime for AI agents. The developer interface
+is a set of YAML spec files in a git repository. The lush CLI
 validates these specs, resolves dependencies, and either runs agents
 locally or produces a build manifest for production deployment.
 
 ```
-                          ┌──────────────┐
-                          │  Agent Specs │
-                          │    (YAML)    │
-                          └──────┬───────┘
+                         ┌───────────────┐
+                         │  Agent Specs  │
+                         │    (YAML)     │
+                         └───────┬───────┘
                                  │
-                          ┌──────▼───────┐
-                          │  pace build  │
-                          │  (validate,  │
-                          │   resolve,   │
-                          │   bundle)    │
-                          └──────┬───────┘
+                        ┌────────▼────────┐
+                        │  lushctl build  │
+                        │  (validate,     │
+                        │   resolve,      │
+                        │   bundle)       │
+                        └────────┬────────┘
                                  │
                        ┌─────────▼─────────┐
                        │  Build Manifest   │
@@ -30,13 +30,13 @@ locally or produces a build manifest for production deployment.
                        │   addressed)      │
                        └─────────┬─────────┘
                                  │
-                 ┌───────────────┼───────────────┐
-                 │               │               │
-          ┌──────▼──────┐ ┌─────▼──────┐ ┌──────▼──────┐
-          │  pace chat  │ │  pace run  │ │ pace serve  │
-          │  (single    │ │  (dev      │ │ (production │
-          │   agent)    │ │   stack)   │ │  server)    │
-          └─────────────┘ └────────────┘ └─────────────┘
+              ┌──────────────────┼──────────────────┐
+              │                  │                  │
+     ┌────────▼────────┐ ┌──────▼───────┐ ┌────────▼────────┐
+     │  lushctl chat   │ │  lushctl run │ │  lushctl serve  │
+     │  (single agent) │ │  (dev stack) │ │  (production    │
+     │                 │ │              │ │   server)       │
+     └─────────────────┘ └──────────────┘ └─────────────────┘
 ```
 
 ## Spec Format
@@ -64,7 +64,7 @@ tools:
     access: read
 
   # Another agent (via MCP)
-  - server: paceline://other-agent
+  - server: lush://other-agent
     access: read
 
   # Custom TypeScript function
@@ -129,7 +129,7 @@ many loops with different instructions.
 
 ### Project Configuration
 
-`paceline.yaml` is the project-level configuration file.
+`lush.yaml` is the project-level configuration file.
 
 ```yaml
 project: my-project
@@ -167,7 +167,7 @@ at runtime.
 
 ## Build System
 
-`pace build` is the primary error surface. It validates the entire
+`lushctl build` is the primary error surface. It validates the entire
 project and produces a content-addressed build manifest.
 
 ### Validation Pipeline
@@ -178,7 +178,7 @@ project and produces a content-addressed build manifest.
    tool file existence and export validation
 4. **Skill resolution** — fetch from registry, verify `skills.lock`
    integrity, extract tools and prompt fragments
-5. **Reference validation** — loop→agent refs exist, `paceline://`
+5. **Reference validation** — loop→agent refs exist, `lush://`
    agent refs exist
 6. **ACL consistency** — all principals are valid format, all service
    accounts in `run_as` and grants are declared, all tools in grants
@@ -188,7 +188,7 @@ project and produces a content-addressed build manifest.
 ### Build Manifest
 
 The output is a content-addressed JSON manifest at
-`.pace/build/<hash>.json`. Same inputs always produce the same hash.
+`.lush/build/<hash>.json`. Same inputs always produce the same hash.
 The manifest contains:
 
 - All resolved agent specs (with skill injections applied)
@@ -197,7 +197,7 @@ The manifest contains:
 - Resolved skill metadata
 - Input hash for deduplication
 
-`pace serve` reads from this manifest. This is the artifact that any
+`lushctl serve` reads from this manifest. This is the artifact that any
 deployment system — self-hosted or managed — consumes.
 
 ### Error Reporting
@@ -220,7 +220,7 @@ warnings.
 
 ### ADK Bridge
 
-Paceline uses [Google ADK](https://github.com/google/adk-js) as the
+Lush uses [Google ADK](https://github.com/google/adk-js) as the
 agent runtime. The bridge layer (`packages/runtime`) translates parsed
 specs into ADK `LlmAgent` instances:
 
@@ -231,19 +231,19 @@ specs into ADK `LlmAgent` instances:
   for local tools)
 
 The bridge is intentionally thin. ADK handles the tool execution loop,
-model interaction, and response streaming. Paceline adds spec-driven
+model interaction, and response streaming. Lush adds spec-driven
 configuration, validation, and the surrounding infrastructure.
 
 ### Execution Modes
 
-**`pace chat <agent>`** — instantiates a single agent, runs an
+**`lushctl chat <agent>`** — instantiates a single agent, runs an
 interactive session or reads stdin. No server, no overhead.
 
-**`pace run`** — starts all agents and loops, launches a dev server with
+**`lushctl run`** — starts all agents and loops, launches a dev server with
 web UI, API endpoints, and trace viewer. Uses Bun's native `--hot` for
 automatic reload on file changes.
 
-**`pace serve`** — production mode. Reads from a build manifest, serves
+**`lushctl serve`** — production mode. Reads from a build manifest, serves
 API endpoints, runs loops on cron. No dev UI, no file watcher. Designed
 for containerized deployment.
 
@@ -264,7 +264,7 @@ tools:
     access: read
 ```
 
-Paceline uses ADK's `McpToolset` to establish and manage MCP
+Lush uses ADK's `McpToolset` to establish and manage MCP
 connections. Supports both stdio (local processes) and SSE (remote
 servers) transports.
 
@@ -273,7 +273,7 @@ servers) transports.
 Local functions defined using `defineTool()`:
 
 ```typescript
-import { defineTool } from '@paceline/runtime';
+import { defineTool } from '@lush-agents/runtime';
 
 export default defineTool({
   name: 'lookup_weather',
@@ -292,15 +292,15 @@ compile step needed during development.
 ### Agent-as-Tool
 
 Agents expose an MCP interface, making them callable as tools by other
-agents via the `paceline://` URL scheme:
+agents via the `lush://` URL scheme:
 
 ```yaml
 tools:
-  - server: paceline://researcher
+  - server: lush://researcher
     access: read
 ```
 
-At runtime, `paceline://researcher` resolves to the agent's MCP
+At runtime, `lush://researcher` resolves to the agent's MCP
 endpoint (local or network address). The calling principal is propagated,
 and the target agent's ACL is enforced.
 
@@ -325,9 +325,9 @@ MCP servers that require authentication receive credentials at
 invocation time, injected by the runtime:
 
 1. **Service accounts** — credentials looked up from `mcp_credentials`
-   in `paceline.yaml`
-2. **Users** — credentials looked up from `.pace/credentials.local`
-   (populated via `pace auth add`)
+   in `lush.yaml`
+2. **Users** — credentials looked up from `.lush/credentials.local`
+   (populated via `lushctl auth add`)
 3. **Missing credentials** — clear error identifying the tool, the
    principal, and how to configure the credential
 
@@ -337,8 +337,8 @@ Agent code never sees credentials directly.
 
 Loops are scheduled agent invocations with cron expressions.
 
-In `pace run`, loops are managed by an in-process cron scheduler. In
-`pace serve`, loops run with production guarantees:
+In `lushctl run`, loops are managed by an in-process cron scheduler. In
+`lushctl serve`, loops run with production guarantees:
 
 - **At-least-once delivery** — if the server restarts, missed firings
   are detected and replayed
@@ -349,7 +349,7 @@ In `pace run`, loops are managed by an in-process cron scheduler. In
 - **Wall-clock timeouts** — invocations are killed after a configurable
   timeout
 
-`pace loop trigger <name>` fires a loop manually, with an optional
+`lushctl loop trigger <name>` fires a loop manually, with an optional
 `--instruction` override for testing variants.
 
 ## Multi-Agent Composition
@@ -360,13 +360,13 @@ tool:
 ```yaml
 # agents/orchestrator/spec.yaml
 tools:
-  - server: paceline://researcher
+  - server: lush://researcher
     access: read
 ```
 
 When the orchestrator calls this tool, the runtime:
 
-1. Resolves `paceline://researcher` to the researcher agent's MCP
+1. Resolves `lush://researcher` to the researcher agent's MCP
    endpoint
 2. Propagates the calling principal
 3. Checks the researcher's ACL (calling principal must have `execute`)
@@ -387,10 +387,10 @@ Three principal types:
 |----------------------------|-------------------------------------------|
 | `user:{id}`                | Authenticated human                       |
 | `group:{name}`             | Named set of users                        |
-| `serviceaccount:{name}`    | Non-human identity (declared in paceline.yaml) |
+| `serviceaccount:{name}`    | Non-human identity (declared in lush.yaml) |
 
 Principal resolution is pluggable: from a bearer token, a request
-header, or local config. This allows paceline to integrate with any
+header, or local config. This allows lush to integrate with any
 identity provider.
 
 ### Two-Step Authorization
@@ -402,7 +402,7 @@ Every tool dispatch goes through two checks:
    for this tool with the required access level (read or write)?
 
 Both must pass. This separation means agent specs define **what's
-possible** while `paceline.yaml` controls **who's allowed**.
+possible** while `lush.yaml` controls **who's allowed**.
 
 ### ACL Scopes
 
@@ -414,7 +414,7 @@ possible** while `paceline.yaml` controls **who's allowed**.
 
 ### Build-Time Validation
 
-`pace build` validates the entire ACL graph:
+`lushctl build` validates the entire ACL graph:
 
 - Every `run_as` service account is declared
 - Every principal in grants uses valid format
@@ -423,7 +423,7 @@ possible** while `paceline.yaml` controls **who's allowed**.
 
 ## Observability
 
-Paceline uses [OpenTelemetry](https://opentelemetry.io) for all
+Lush uses [OpenTelemetry](https://opentelemetry.io) for all
 instrumentation. Every agent invocation produces a structured trace.
 
 ### Trace Structure
@@ -456,8 +456,8 @@ Multi-agent invocations link parent and child spans across agents.
 
 | Mode           | Backend                                     |
 |----------------|---------------------------------------------|
-| `pace run`     | In-memory (dev), SQLite (persistent)        |
-| `pace serve`   | Configurable: SQLite, OTLP export, or both  |
+| `lushctl run`     | In-memory (dev), SQLite (persistent)        |
+| `lushctl serve`   | Configurable: SQLite, OTLP export, or both  |
 
 OTel-native export means traces flow directly into Jaeger, Grafana
 Tempo, Datadog, or any OTLP-compatible backend with zero custom
@@ -485,13 +485,13 @@ Aggregated from trace data:
 
 ## Production Deployment
 
-### `pace serve`
+### `lushctl serve`
 
 The production server is a single Bun process that reads from a build
 manifest:
 
 ```
-pace build → .pace/build/<hash>.json → pace serve
+lushctl build → .lush/build/<hash>.json → lushctl serve
 ```
 
 Configuration is entirely via environment variables:
@@ -517,7 +517,7 @@ Configuration is entirely via environment variables:
 
 ### Containerization
 
-`pace serve` is designed for containerized deployment. The recommended
+`lushctl serve` is designed for containerized deployment. The recommended
 Dockerfile uses a multi-stage build with a Bun base image, runs as a
 non-root user with a read-only filesystem, and wires `/health` to a
 Docker `HEALTHCHECK`.
