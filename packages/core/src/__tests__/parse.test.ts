@@ -56,7 +56,7 @@ model: gpt-5
 description: test
 `),
 		).toThrow(
-			'Unknown model "gpt-5". Supported: gemini-2.5-flash, gemini-2.5-pro',
+			'Unknown model "gpt-5". Supported: gemini-2.5-flash, gemini-2.5-pro, gemini-3-flash-preview',
 		);
 	});
 

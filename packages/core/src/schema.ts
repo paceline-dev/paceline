@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-export const SUPPORTED_MODELS = ["gemini-2.5-flash", "gemini-2.5-pro"] as const;
+export const SUPPORTED_MODELS = [
+	"gemini-2.5-flash",
+	"gemini-2.5-pro",
+	"gemini-3-flash-preview",
+] as const;
 
 // -- Tool entries (two forms) --
 
