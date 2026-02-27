@@ -1,7 +1,7 @@
-# Paceline OSS Roadmap
+# Lush OSS Roadmap
 
-Paceline is a spec-driven framework for building, running, and deploying
-AI agents. You define agents in YAML, and paceline handles the rest —
+Lush is a spec-driven framework for building, running, and deploying
+AI agents. You define agents in YAML, and lush handles the rest —
 validation, tool wiring, scheduling, access control, and observability.
 
 This roadmap covers the open-source project. Each milestone unlocks a
@@ -11,25 +11,25 @@ concrete demo and is tracked as a GitHub Project.
 
 ## CLI Commands
 
-These are the commands paceline will provide, introduced progressively
+These are the commands lush will provide, introduced progressively
 across milestones:
 
 | Command                  | Milestone | Purpose                                  |
 |--------------------------|-----------|------------------------------------------|
-| `pace init`              | 1         | Scaffold a new paceline project          |
-| `pace chat <agent>`      | 1         | Chat with a single agent (TTY-aware)     |
-| `pace build`             | 4         | Validate specs, emit build manifest      |
-| `pace run`               | 5         | Start all agents, loops, web UI, API     |
-| `pace loop trigger`      | 6         | Manually fire a loop                     |
-| `pace serve`             | 8         | Run production server (no dev UI)        |
-| `pace auth add <tool>`   | 5         | Store local credentials                  |
-| `pace skill add`         | 9         | Add a skill from a registry              |
+| `lushctl init`              | 1         | Scaffold a new lush project          |
+| `lushctl chat <agent>`      | 1         | Chat with a single agent (TTY-aware)     |
+| `lushctl build`             | 4         | Validate specs, emit build manifest      |
+| `lushctl run`               | 5         | Start all agents, loops, web UI, API     |
+| `lushctl loop trigger`      | 6         | Manually fire a loop                     |
+| `lushctl serve`             | 8         | Run production server (no dev UI)        |
+| `lushctl auth add <tool>`   | 5         | Store local credentials                  |
+| `lushctl skill add`         | 9         | Add a skill from a registry              |
 
 ---
 
 ## Milestone 1: Spec to Chat
 
-**Demo:** Write a 5-line YAML file, run `pace chat helper`, have a
+**Demo:** Write a 5-line YAML file, run `lushctl chat helper`, have a
 conversation in your terminal.
 
 ```yaml
@@ -40,7 +40,7 @@ description: You are a helpful assistant that answers questions concisely.
 ```
 
 ```
-$ pace chat helper
+$ lushctl chat helper
 🟢 helper (gemini-2.5-flash)
 
 You: What's the capital of France?
@@ -50,7 +50,7 @@ helper: Paris.
 Pipe mode (non-TTY):
 
 ```
-$ echo "What's the capital of France?" | pace chat helper
+$ echo "What's the capital of France?" | lushctl chat helper
 Paris.
 ```
 
@@ -60,10 +60,10 @@ Paris.
 - `packages/core`: YAML spec parser with zod schema validation
 - `packages/runtime`: Bridge that instantiates a Google ADK `LlmAgent`
   from a parsed spec
-- `packages/cli`: `pace init` and `pace chat <agent>` commands
+- `packages/cli`: `lushctl init` and `lushctl chat <agent>` commands
 - TTY detection: interactive readline in terminals, stdin/stdout in pipes
 - Wire ADK to Gemini (`GOOGLE_API_KEY` env var)
-- Starter template: `pace init` scaffolds the canonical project structure
+- Starter template: `lushctl init` scaffolds the canonical project structure
 
 ### What this proves
 
@@ -87,7 +87,7 @@ tools:
 ```
 
 ```
-$ pace chat file-reader
+$ lushctl chat file-reader
 🟢 file-reader (gemini-2.5-flash)
    tools: filesystem (read)
 
@@ -117,7 +117,7 @@ calls it.
 
 ```typescript
 // tools/lookup-weather.ts
-import { defineTool } from '@paceline/runtime';
+import { defineTool } from '@lush-agents/runtime';
 
 export default defineTool({
   name: 'lookup_weather',
@@ -141,7 +141,7 @@ tools:
 ```
 
 ```
-$ pace chat weather-bot
+$ lushctl chat weather-bot
 🟢 weather-bot (gemini-2.5-flash)
    tools: lookup_weather (read, local)
 
@@ -164,11 +164,11 @@ Extending agents with custom logic is trivial — just write a function.
 
 ## Milestone 4: Build System
 
-**Demo:** Run `pace build` with intentional misconfigurations, get clear
+**Demo:** Run `lushctl build` with intentional misconfigurations, get clear
 errors before anything runs.
 
 ```
-$ pace build
+$ lushctl build
 
 ✗ Build failed (4 errors)
 
@@ -183,7 +183,7 @@ $ pace build
     ✗ References agent "summarizer" but no agent with that name exists.
       Available agents: helper, file-reader, weather-bot
 
-  paceline.yaml:12
+  lush.yaml:12
     ✗ tool_grants references serviceaccount:reporter but it is not
       declared in service_accounts.
 
@@ -191,15 +191,15 @@ $ pace build
 ```
 
 ```
-$ pace build
+$ lushctl build
 ✓ Build succeeded
   3 agents, 1 loop, 2 tools
-  Manifest: .pace/build/abc123.json
+  Manifest: .lush/build/abc123.json
 ```
 
 ### What we build
 
-- `pace build` command that runs the full validation pipeline
+- `lushctl build` command that runs the full validation pipeline
 - Checks: model validation, MCP reachability (with timeout), tool path
   resolution, loop→agent refs, ACL consistency, service account declarations
 - Content-addressed build manifest (hash of all resolved specs + bundled tools)
@@ -215,11 +215,11 @@ production. Mistakes are caught early with actionable feedback.
 
 ## Milestone 5: Local Dev Stack
 
-**Demo:** `pace run` stands up everything — all agents, web chat UI,
+**Demo:** `lushctl run` stands up everything — all agents, web chat UI,
 API server, trace viewer, hot-reload.
 
 ```
-$ pace run
+$ lushctl run
 
   ● API server    → http://localhost:3141/api
   ● Web UI        → http://localhost:3141
@@ -241,13 +241,13 @@ file and the agent hot-reloads.
 ### What we build
 
 - `packages/dev-server`: local server with API routes and web UI
-- `pace run` discovers and starts all agents + loops from the project tree
+- `lushctl run` discovers and starts all agents + loops from the project tree
 - API routes: `/api/agents/[name]/chat` with streaming support
 - Chat UI: agent picker, conversation view
 - Trace viewer: structured invocation logs (agent, tools, latency, tokens)
 - Hot-reload: Bun's native `--hot` for spec and tool changes
-- `pace auth add <tool>` for local credential management
-  (`.pace/credentials.local`, gitignored)
+- `lushctl auth add <tool>` for local credential management
+  (`.lush/credentials.local`, gitignored)
 - Credential injection into MCP connections at invocation time
 
 ### What this proves
@@ -274,18 +274,18 @@ instruction: |
 ```
 
 ```
-$ pace run
+$ lushctl run
   ...
   Loops:
     daily-digest  → cron(0 9 * * *)  → helper
 
 # In another terminal:
-$ pace loop trigger daily-digest
+$ lushctl loop trigger daily-digest
 🔄 Triggering daily-digest → helper
 helper: Here are today's top HN stories:
   1. ...
 
-$ pace loop trigger daily-digest --instruction "Just tell me the #1 story"
+$ lushctl loop trigger daily-digest --instruction "Just tell me the #1 story"
 🔄 Triggering daily-digest → helper (instruction override)
 helper: The top story today is...
 ```
@@ -293,11 +293,11 @@ helper: The top story today is...
 ### What we build
 
 - Loop spec parser (name, schedule, agent, run_as, instruction, acl)
-- Loop runner using node-cron (in `pace run`) or system cron (in `pace serve`)
-- `pace loop trigger <name>` for manual invocation
+- Loop runner using node-cron (in `lushctl run`) or system cron (in `lushctl serve`)
+- `lushctl loop trigger <name>` for manual invocation
 - `--instruction` flag for override testing
 - Loop invocations appear in the trace viewer
-- Validate loops during `pace build` (agent refs, cron syntax, service accounts)
+- Validate loops during `lushctl build` (agent refs, cron syntax, service accounts)
 
 ### What this proves
 
@@ -330,12 +330,12 @@ description: |
   You coordinate research tasks. Use the researcher agent for
   deep dives and synthesize the results.
 tools:
-  - server: paceline://researcher
+  - server: lush://researcher
     access: read
 ```
 
 ```
-$ pace chat orchestrator
+$ lushctl chat orchestrator
 You: Research the current state of AI agent frameworks
 orchestrator: Let me delegate this to the researcher...
   [calls researcher via MCP → researcher searches the web → returns findings]
@@ -345,7 +345,7 @@ orchestrator: Based on my research, here's the landscape...
 ### What we build
 
 - Every agent exposes an `/mcp` endpoint (MCP server interface)
-- `paceline://` URL scheme for intra-project agent references (resolved
+- `lush://` URL scheme for intra-project agent references (resolved
   by the runtime to the correct local or network address)
 - Cross-agent ACL enforcement: calling principal checked against target
   agent's ACL
@@ -360,14 +360,14 @@ security model, same observability, same spec format.
 
 ## Milestone 8: Production Server
 
-**Demo:** `pace serve` runs your agents as a production-ready process.
+**Demo:** `lushctl serve` runs your agents as a production-ready process.
 Deploy it anywhere you can run Node.js.
 
 ```
-$ pace build
+$ lushctl build
 ✓ Build succeeded
 
-$ pace serve
+$ lushctl serve
   Listening on :8080
 
   Agents:
@@ -390,7 +390,7 @@ Deploy with Docker, systemd, any PaaS — it's just a Bun process.
 
 ### What we build
 
-- `pace serve` command: production server (no dev UI, no file watcher
+- `lushctl serve` command: production server (no dev UI, no file watcher
   — just agents, loops, and API endpoints)
 - Serves: `/agents/[name]/chat`, `/agents/[name]/chat/stream`,
   `/agents/[name]/mcp`, `/agents/[name]/status`
@@ -398,11 +398,11 @@ Deploy with Docker, systemd, any PaaS — it's just a Bun process.
 - Configurable via environment variables (port, log level, credential paths)
 - Dockerfile in the starter template (Bun base image)
 - Loop runner with proper signal handling and graceful shutdown
-- Reads build manifest — requires `pace build` to have run first
+- Reads build manifest — requires `lushctl build` to have run first
 
 ### What this proves
 
-Paceline agents are self-hostable. No managed platform required — deploy
+Lush agents are self-hostable. No managed platform required — deploy
 anywhere you can run Bun.
 
 ---
@@ -413,7 +413,7 @@ anywhere you can run Bun.
 injected into your agent. The spec allowlist has the final say.
 
 ```
-$ pace skill add skills.sh/salesforce/crm@1.2
+$ lushctl skill add skills.sh/salesforce/crm@1.2
 ✓ Added salesforce/crm@1.2
   Tools: sf_query, sf_create_record, sf_update_record
   Updated skills.lock
@@ -444,7 +444,7 @@ tools:
 
 - Skill resolution: fetch from registry URL, validate, extract tools + prompts
 - `skills.lock`: integrity hashes, pinned versions
-- `pace skill add/remove/update` commands
+- `lushctl skill add/remove/update` commands
 - Build step: resolve skills, inject tools and prompt fragments, enforce
   that the agent's `tools` allowlist is authoritative (skills can't grant
   tools the spec doesn't list)
@@ -462,7 +462,7 @@ the spec always has the final word on what's allowed.
 specs and enforced at runtime.
 
 ```yaml
-# paceline.yaml
+# lush.yaml
 service_accounts:
   - name: digest-bot
 
@@ -498,9 +498,9 @@ acl:
 - Principal resolution: pluggable — from bearer token, request header,
   or local config
 - Tool grant enforcement at tool dispatch (read/write per principal)
-- `pace build` validates ACL consistency (known principals, declared
+- `lushctl build` validates ACL consistency (known principals, declared
   service accounts, granted tools)
-- ACL summary in `pace build` output: who can do what
+- ACL summary in `lushctl build` output: who can do what
 
 ### What this proves
 
@@ -515,7 +515,7 @@ in a reviewed YAML file.
 them locally.
 
 ```
-$ pace run
+$ lushctl run
   ...
   Trace viewer  → http://localhost:3141/traces
 
@@ -540,9 +540,9 @@ Traces (last 1h):
 - Trace storage: pluggable backend (SQLite locally, Postgres in production,
   or any adapter)
 - Query interface: filter by agent, loop, time range, status, principal
-- Trace viewer in `pace run` web UI (expanded from Milestone 5 stub)
+- Trace viewer in `lushctl run` web UI (expanded from Milestone 5 stub)
 - Trace export: JSON lines format for integration with external systems
-- `pace serve` emits traces to configured backend
+- `lushctl serve` emits traces to configured backend
 
 ### What this proves
 
@@ -560,7 +560,7 @@ wire up persistence and telemetry to your existing infrastructure.
 
 - Production container image: multi-stage Dockerfile, Bun base, non-root,
   read-only filesystem, `HEALTHCHECK` wired to `/health`
-- Helm chart for Kubernetes (`charts/paceline/`): Deployment, Service,
+- Helm chart for Kubernetes (`charts/lush/`): Deployment, Service,
   Ingress, HPA, OTel sidecar config, Secret references
 - Integration guides (`docs/self-hosting/`):
   - Persistence: connecting OTel export to Jaeger/Tempo/Datadog, SQLite
@@ -575,7 +575,7 @@ wire up persistence and telemetry to your existing infrastructure.
 
 ### What this proves
 
-Paceline agents run on your infrastructure, your way. No vendor lock-in.
+Lush agents run on your infrastructure, your way. No vendor lock-in.
 
 ---
 
@@ -624,7 +624,7 @@ my-project/
 ├── skills/
 │   └── [auto-populated]
 ├── skills.lock
-└── paceline.yaml
+└── lush.yaml
 ```
 
 ## Technology

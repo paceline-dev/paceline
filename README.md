@@ -1,6 +1,6 @@
-# Paceline
+# Lush
 
-Paceline is a spec-driven framework for building, running, and deploying
+Lush is a spec-driven framework for building, running, and deploying
 AI agents. Define agents in YAML, wire in tools via MCP, schedule
 autonomous loops, and ship to production — all from a single project
 directory versioned in git.
@@ -13,14 +13,14 @@ description: You are a helpful assistant that answers questions concisely.
 ```
 
 ```
-$ pace chat helper
+$ lushctl chat helper
 🟢 helper (gemini-2.5-flash)
 
 You: What's the capital of France?
 helper: Paris.
 ```
 
-## Why Paceline
+## Why Lush
 
 There's a gap between no-code agent builders and raw agent frameworks.
 No-code tools handle greenfield apps but break down when you need version
@@ -28,7 +28,7 @@ control, code review, and production infrastructure. Raw frameworks give
 you full control but leave deployment, scheduling, security, and
 observability as exercises for the reader.
 
-Paceline fills this gap. It is to agent development what build tools like
+Lush fills this gap. It is to agent development what build tools like
 Vite are to web development: an opinionated, spec-driven workflow that
 catches errors early, provides a great local dev experience, and produces
 artifacts you can deploy anywhere.
@@ -38,13 +38,13 @@ schedules — lives in YAML files in git. No config drift. No permissions
 diverging from reviewed deployments.
 
 **Build catches errors early.** Invalid tool references, missing agents,
-undeclared service accounts — all caught at `pace build` before anything
+undeclared service accounts — all caught at `lushctl build` before anything
 reaches production.
 
 **Preview before shipping.** Write tools are stubbed by default so you
 can observe agent behavior before enabling live side effects.
 
-**Self-hostable.** `pace serve` runs your agents as a standard Bun
+**Self-hostable.** `lushctl serve` runs your agents as a standard Bun
 process. Deploy with Docker, Kubernetes, or any platform that runs
 containers.
 
@@ -58,7 +58,7 @@ containers.
 ### Create a project
 
 ```bash
-pace init my-agents
+lushctl init my-agents
 cd my-agents
 export GOOGLE_API_KEY="your-key-here"
 ```
@@ -70,7 +70,7 @@ my-agents/
 ├── agents/
 │   └── helper/
 │       └── spec.yaml
-├── paceline.yaml
+├── lush.yaml
 ├── package.json
 └── .gitignore
 ```
@@ -80,13 +80,13 @@ my-agents/
 Interactive mode:
 
 ```bash
-pace chat helper
+lushctl chat helper
 ```
 
 Pipe mode (for scripting and CI):
 
 ```bash
-echo "Summarize this README" | pace chat helper
+echo "Summarize this README" | lushctl chat helper
 ```
 
 ### Add tools
@@ -105,7 +105,7 @@ tools:
 
 ```typescript
 // tools/lookup-weather.ts
-import { defineTool } from '@paceline/runtime';
+import { defineTool } from '@lush-agents/runtime';
 
 export default defineTool({
   name: 'lookup_weather',
@@ -121,7 +121,7 @@ export default defineTool({
 ### Validate everything
 
 ```bash
-pace build
+lushctl build
 ```
 
 The build step validates all specs — model names, tool references, loop
@@ -130,7 +130,7 @@ schedules, ACL consistency — and produces a content-addressed manifest.
 ### Run the full dev stack
 
 ```bash
-pace run
+lushctl run
 ```
 
 Starts all agents, loops, a web chat UI, API server, and trace viewer
@@ -149,17 +149,17 @@ instruction: |
 ```
 
 ```bash
-pace loop trigger daily-digest
+lushctl loop trigger daily-digest
 ```
 
 ### Deploy to production
 
 ```bash
-pace build
-pace serve
+lushctl build
+lushctl serve
 ```
 
-`pace serve` runs your agents as a production-ready Bun process — no dev
+`lushctl serve` runs your agents as a production-ready Bun process — no dev
 UI, no file watcher, just agents, loops, and API endpoints. Containerize
 it and deploy anywhere.
 
@@ -167,14 +167,14 @@ it and deploy anywhere.
 
 | Command                          | Purpose                              |
 |----------------------------------|--------------------------------------|
-| `pace init [dir]`                | Scaffold a new project               |
-| `pace chat <agent>`              | Chat with a single agent (TTY-aware) |
-| `pace build`                     | Validate specs, emit build manifest  |
-| `pace run`                       | Start all agents, loops, web UI, API |
-| `pace serve`                     | Run production server                |
-| `pace loop trigger <name>`       | Manually fire a loop                 |
-| `pace auth add <tool>`           | Store local credentials              |
-| `pace skill add <ref>`           | Add a skill from a registry          |
+| `lushctl init [dir]`                | Scaffold a new project               |
+| `lushctl chat <agent>`              | Chat with a single agent (TTY-aware) |
+| `lushctl build`                     | Validate specs, emit build manifest  |
+| `lushctl run`                       | Start all agents, loops, web UI, API |
+| `lushctl serve`                     | Run production server                |
+| `lushctl loop trigger <name>`       | Manually fire a loop                 |
+| `lushctl auth add <tool>`           | Store local credentials              |
+| `lushctl skill add <ref>`           | Add a skill from a registry          |
 
 ## Project Structure
 
@@ -190,12 +190,12 @@ my-project/
 ├── skills/
 │   └── [auto-populated]     # Installed skill definitions
 ├── skills.lock               # Pinned skill versions
-└── paceline.yaml             # Project config: service accounts, tool grants
+└── lush.yaml             # Project config: service accounts, tool grants
 ```
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md) — how paceline works under the hood
+- [Architecture](docs/ARCHITECTURE.md) — how lush works under the hood
 - [Roadmap](ROADMAP.md) — milestone-driven development plan
 
 ## Technology
