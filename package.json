@@ -1,0 +1,14 @@
+{
+	"name": "lush",
+	"private": true,
+	"workspaces": ["packages/*"],
+	"scripts": {
+		"check": "biome check .",
+		"check:fix": "biome check --write ."
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.0",
+		"@types/bun": "^1.2.0",
+		"typescript": "^5.7.0"
+	}
+}
