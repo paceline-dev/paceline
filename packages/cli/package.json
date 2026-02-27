@@ -1,0 +1,19 @@
+{
+	"name": "@lush-agents/cli",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"bin": {
+		"lushctl": "src/index.ts"
+	},
+	"exports": {
+		".": {
+			"import": "./src/index.ts",
+			"types": "./src/index.ts"
+		}
+	},
+	"dependencies": {
+		"@lush-agents/core": "workspace:*",
+		"@lush-agents/runtime": "workspace:*"
+	}
+}
